@@ -44,4 +44,15 @@ public class ProductService {
     public List<Product> getProductsOnSale() {
         return productRepository.getProductsOnSale();
     }
+
+    public String updateSale(int id, double newSale){
+        Product product = productRepository.getProductById(id);
+        if(product != null){
+            product.setSale(newSale);
+            productRepository.save(product);
+            return "Sale updated!";
+        }else{
+            return "Sale did not update!";
+        }
+    }
 }

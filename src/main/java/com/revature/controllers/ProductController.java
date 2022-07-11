@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -109,5 +110,11 @@ public class ProductController {
     @GetMapping("/sale")
     public ResponseEntity<List<Product>> getProductsOnSale() {
         return ResponseEntity.ok(productService.getProductsOnSale());
+    }
+
+    @Authorized
+    @PostMapping("/updatesale")
+    public String updateSale(@RequestBody Map<String, Object> dto){
+        return productService.updateSale(Integer.parseInt(dto.get("id").toString()), Double.parseDouble(dto.get("sale").toString()));
     }
 }
