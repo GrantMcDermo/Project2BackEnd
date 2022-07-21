@@ -44,11 +44,31 @@ public class ProductController {
     }
 
     @Authorized
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(@PathVariable("id") int id, @RequestBody Product product, HttpSession httpSession){
+        User u=(User) httpSession.getAttribute("user");
+        Optional<Product> p= productService.findById(id);
+        if(u.getRole().toString()=="Admin"&&p!=null){
+            product.setId(id);
+            product.setSale(p.get().getSale());
+            product.setFeatured(p.get().isFeatured());
+            return ResponseEntity.ok(productService.save(product));
+
+        }else{
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @Authorized
     @PutMapping
     public ResponseEntity<Product> upsert(@RequestBody Product product, HttpSession session) {
         User u= (User) session.getAttribute("user");
         if(u.getRole().toString()=="Admin") {
+            productService.save(product);
+            product.setSale(0.00);
+            product.setFeatured(false);
             return ResponseEntity.ok(productService.save(product));
+
         }
         else{
             return ResponseEntity.notFound().build();
@@ -84,26 +104,61 @@ public class ProductController {
 
     @Authorized
     @DeleteMapping("/{id}")
-    public ResponseEntity<Product> deleteProduct(@PathVariable("id") int id, HttpSession session) {
+    public ResponseEntity<String> deleteProduct(@PathVariable("id") int id, HttpSession session) {
         Optional<Product> optional = productService.findById(id);
         User u= (User) session.getAttribute("user");
-        if (u.getRole().toString()=="Admin") {
-            if (!optional.isPresent()) {
-                return ResponseEntity.notFound().build();
-            }
-            productService.delete(id);
-
-            return ResponseEntity.ok(optional.get());
-        }
-        else{
+        if (!optional.isPresent()) {
             return ResponseEntity.notFound().build();
         }
+        if(u.getRole().toString()=="Admin") {
+            productService.delete(id);
+        }
+        else{
+            return ResponseEntity.ok("Must be logged in as Admin to perform this action");
+        }
+        return ResponseEntity.ok("Product is deleted");
     }
-
+    @Authorized
+    @PutMapping("/featured/{id}")
+    public ResponseEntity<String> addFeaturedProduct(@PathVariable("id") int id, HttpSession session){
+        User u= (User) session.getAttribute("user");
+        if(u.getRole().toString()=="Admin"){
+            return ResponseEntity.ok(productService.addProductToFeaturedList(id));
+        }
+        else {
+            return ResponseEntity.ok("Must be logged in as Admin to perform this action");
+        }
+    }
+    @Authorized
+    @DeleteMapping("/featured/{id}")
+    public ResponseEntity<String> deleteFeaturedProduct(@PathVariable("id") int id, HttpSession session){
+        User u= (User) session.getAttribute("user");
+        if(u.getRole().toString()=="Admin"){
+            return ResponseEntity.ok(productService.deleteProductToFeaturedList(id));
+        }
+        else {
+            //return ResponseEntity.notFound().build();
+            return ResponseEntity.ok("Must be logged in as Admin to perform this action");
+        }
+    }
     @Authorized
     @GetMapping("/featured")
     public ResponseEntity<List<Product>> getFeaturedProducts() {
         return ResponseEntity.ok(productService.getFeaturedProducts());
+    }
+
+    @Authorized
+    @PostMapping("/sale")
+    public ResponseEntity<String> updateSale(@RequestBody Map<String, Object> dto, HttpSession session){
+        User u= (User) session.getAttribute("user");
+        if(u.getRole().toString()=="Admin"){
+            productService.updateSale(dto);
+        }
+        else {
+            return ResponseEntity.ok("Must be logged in as Admin to perform this action");
+        }
+        return ResponseEntity.ok("This sale is updated");
+
     }
 
     @Authorized
@@ -113,8 +168,8 @@ public class ProductController {
     }
 
     @Authorized
-    @PostMapping("/updatesale")
-    public String updateSale(@RequestBody Map<String, Object> dto){
-        return productService.updateSale(Integer.parseInt(dto.get("id").toString()), Double.parseDouble(dto.get("sale").toString()));
+    @GetMapping("/stocked")
+    public ResponseEntity<List<Product>> getProductsOverZero(){
+        return ResponseEntity.ok(productService.getProductsOverZero());
     }
 }

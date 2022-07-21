@@ -1,8 +1,8 @@
 package com.revature.advice;
 
-import com.revature.annotations.AuthRestriction;
 import com.revature.annotations.Authorized;
 import com.revature.exceptions.NotLoggedInException;
+import com.revature.models.User;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -48,7 +48,7 @@ public class AuthAspect {
     public Object authenticate(ProceedingJoinPoint pjp, Authorized authorized) throws Throwable {
 
         HttpSession session = req.getSession(); // Get the session (or create one)
-
+        User u= (User) session.getAttribute("user");
         // If the user is not logged in
         if(session.getAttribute("user") == null) {
             throw new NotLoggedInException("Must be logged in to perform this action");
